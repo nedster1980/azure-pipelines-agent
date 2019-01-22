@@ -142,6 +142,30 @@ namespace Microsoft.VisualStudio.Services.Agent.Util
                 cancellationToken: cancellationToken);
         }
 
+        public Task<int> ExecuteAsync(
+            string workingDirectory,
+            string fileName,
+            string arguments,
+            IDictionary<string, string> environment,
+            bool requireExitCodeZero,
+            Encoding outputEncoding,
+            bool killProcessOnCancel,
+            InputQueue<string> redirectStandardIn,
+            CancellationToken cancellationToken)
+        {
+            return ExecuteAsync(
+                workingDirectory: workingDirectory,
+                fileName: fileName,
+                arguments: arguments,
+                environment: environment,
+                requireExitCodeZero: requireExitCodeZero,
+                outputEncoding: outputEncoding,
+                killProcessOnCancel: killProcessOnCancel,
+                redirectStandardIn: redirectStandardIn,
+                inheritConsoleHandler: false,
+                cancellationToken: cancellationToken);
+        }
+
         public async Task<int> ExecuteAsync(
             string workingDirectory,
             string fileName,
@@ -151,6 +175,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Util
             Encoding outputEncoding,
             bool killProcessOnCancel,
             InputQueue<string> redirectStandardIn,
+            bool inheritConsoleHandler,
             CancellationToken cancellationToken)
         {
             ArgUtil.Null(_proc, nameof(_proc));
@@ -164,13 +189,14 @@ namespace Microsoft.VisualStudio.Services.Agent.Util
             Trace.Info($"  Encoding web name: {outputEncoding?.WebName} ; code page: '{outputEncoding?.CodePage}'");
             Trace.Info($"  Force kill process on cancellation: '{killProcessOnCancel}'");
             Trace.Info($"  Redirected STDIN: '{redirectStandardIn != null}'");
+            Trace.Info($"  Persist current code page: '{inheritConsoleHandler}'");
 
             _proc = new Process();
             _proc.StartInfo.FileName = fileName;
             _proc.StartInfo.Arguments = arguments;
             _proc.StartInfo.WorkingDirectory = workingDirectory;
             _proc.StartInfo.UseShellExecute = false;
-            _proc.StartInfo.CreateNoWindow = true;
+            _proc.StartInfo.CreateNoWindow = !inheritConsoleHandler;
             _proc.StartInfo.RedirectStandardInput = true;
             _proc.StartInfo.RedirectStandardError = true;
             _proc.StartInfo.RedirectStandardOutput = true;

@@ -1,17 +1,15 @@
-using Microsoft.TeamFoundation.DistributedTask.WebApi;
-using Agent.Sdk;
-using Microsoft.VisualStudio.Services.Agent.Util;
-using Microsoft.VisualStudio.Services.WebApi;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Loader;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text;
-using System.Collections.Concurrent;
+using Agent.Sdk;
+using Microsoft.TeamFoundation.DistributedTask.WebApi;
+using Microsoft.VisualStudio.Services.Agent.Util;
+using Microsoft.VisualStudio.Services.WebApi;
 using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
 using Microsoft.TeamFoundation.Framework.Common;
 
@@ -37,7 +35,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
         private readonly Dictionary<string, PluginInfo> _logPlugins = new Dictionary<string, PluginInfo>()
         {
-            {"TestResultLogPlugin", new PluginInfo("Agent.Plugins.Log.TestResultLogPlugin, Agent.Plugins", "Test Result Log Parser")}
+            //{"SampleLogPlugin",  new PluginInfo("Agent.Plugins.Log.SampleLogPlugin, Agent.Plugins", "Re-save Log")},
         };
 
         private class PluginInfo
@@ -67,7 +65,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
             {
                 foreach (var plugin in _logPlugins)
                 {
-                    if (context.Variables.GetBoolean($"agent.disablelog.{plugin.Key}") ?? false)
+                    if (context.Variables.GetBoolean($"agent.disablelogplugin.{plugin.Key}") ?? false)
                     {
                         // skip plugin 
                         context.Debug($"Log plugin '{plugin.Key}' is disabled.");
@@ -138,9 +136,9 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                 {
                     pluginContext.Variables[publicVar.Key] = publicVar.Value;
                 }
-                foreach (var publicVar in context.Variables.Private)
+                foreach (var privateVar in context.Variables.Private)
                 {
-                    pluginContext.Variables[publicVar.Key] = new VariableValue(publicVar.Value, true);
+                    pluginContext.Variables[privateVar.Key] = new VariableValue(privateVar.Value, true);
                 }
 
                 // steps
@@ -187,9 +185,9 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                 {
                     while (_outputs.TryDequeue(out string output))
                     {
-                        if (output.StartsWith("##[plugin.trace]", StringComparison.OrdinalIgnoreCase))
+                        if (output.StartsWith(Constants.PluginTracePrefix, StringComparison.OrdinalIgnoreCase))
                         {
-                            Trace.Info(output.Substring("##[plugin.trace]".Length));
+                            Trace.Info(output.Substring(Constants.PluginTracePrefix.Length));
                         }
                         else
                         {
@@ -197,15 +195,15 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                         }
                     }
 
-                    await Task.WhenAny(Task.Delay(100), _pluginHostProcess);
+                    await Task.WhenAny(Task.Delay(250), _pluginHostProcess);
                 }
 
                 // try process output queue again, in case we have buffered outputs haven't process on process exit
                 while (_outputs.TryDequeue(out string output))
                 {
-                    if (output.StartsWith("##[plugin.trace]", StringComparison.OrdinalIgnoreCase))
+                    if (output.StartsWith(Constants.PluginTracePrefix, StringComparison.OrdinalIgnoreCase))
                     {
-                        Trace.Info(output.Substring("##[plugin.trace]".Length));
+                        Trace.Info(output.Substring(Constants.PluginTracePrefix.Length));
                     }
                     else
                     {
@@ -221,7 +219,14 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
         {
             if (_pluginHostProcess != null && !string.IsNullOrEmpty(message))
             {
-                _redirectedStdin.Enqueue($"{stepId}:{message}");
+                var lines = message.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
+                {
+                    if (!String.IsNullOrEmpty(line))
+                    {
+                        _redirectedStdin.Enqueue($"{stepId}:{line}");
+                    }
+                }
             }
         }
     }

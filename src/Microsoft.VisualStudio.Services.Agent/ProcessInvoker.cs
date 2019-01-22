@@ -58,6 +58,18 @@ namespace Microsoft.VisualStudio.Services.Agent
             bool killProcessOnCancel,
             InputQueue<string> redirectStandardIn,
             CancellationToken cancellationToken);
+        
+        Task<int> ExecuteAsync(
+            string workingDirectory,
+            string fileName,
+            string arguments,
+            IDictionary<string, string> environment,
+            bool requireExitCodeZero,
+            Encoding outputEncoding,
+            bool killProcessOnCancel,
+            InputQueue<string> redirectStandardIn,
+            bool inheritConsoleHandler,
+            CancellationToken cancellationToken);
     }
 
     // The implementation of the process invoker does not hook up DataReceivedEvent and ErrorReceivedEvent of Process,
@@ -156,6 +168,31 @@ namespace Microsoft.VisualStudio.Services.Agent
                 cancellationToken: cancellationToken);
         }
 
+        public Task<int> ExecuteAsync(
+            string workingDirectory,
+            string fileName,
+            string arguments,
+            IDictionary<string, string> environment,
+            bool requireExitCodeZero,
+            Encoding outputEncoding,
+            bool killProcessOnCancel,
+            InputQueue<string> redirectStandardIn,
+            CancellationToken cancellationToken)
+        {
+            return ExecuteAsync(
+                workingDirectory: workingDirectory,
+                fileName: fileName,
+                arguments: arguments,
+                environment: environment,
+                requireExitCodeZero: requireExitCodeZero,
+                outputEncoding: outputEncoding,
+                killProcessOnCancel: killProcessOnCancel,
+                redirectStandardIn: redirectStandardIn,
+                inheritConsoleHandler: false,
+                cancellationToken: cancellationToken
+            );
+        }
+
         public async Task<int> ExecuteAsync(
             string workingDirectory,
             string fileName,
@@ -165,6 +202,7 @@ namespace Microsoft.VisualStudio.Services.Agent
             Encoding outputEncoding,
             bool killProcessOnCancel,
             InputQueue<string> redirectStandardIn,
+            bool inheritConsoleHandler,
             CancellationToken cancellationToken)
         {
             _invoker.ErrorDataReceived += this.ErrorDataReceived;
@@ -178,6 +216,7 @@ namespace Microsoft.VisualStudio.Services.Agent
                 outputEncoding,
                 killProcessOnCancel,
                 redirectStandardIn,
+                inheritConsoleHandler,
                 cancellationToken);
         }
 

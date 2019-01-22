@@ -5,7 +5,7 @@
 ## Supported Distributions and Versions
 
 x64
-  - Red Hat Enterprise Linux 7, 6
+  - Red Hat Enterprise Linux 7
   - CentOS 7
   - Oracle Linux 7
   - Fedora 28, 27
@@ -18,6 +18,8 @@ x64
 ARM32
   - Debian 9 or later versions
   - Ubuntu 18.04 or later versions
+> Note: ARM instruction set [ARMv7](https://en.wikipedia.org/wiki/List_of_ARM_microarchitectures) or above is required, you can get your device's information by executing `uname -a`
+
 
 ## Install .Net Core 2.x Linux Dependencies
 

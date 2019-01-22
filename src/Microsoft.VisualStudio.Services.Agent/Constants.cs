@@ -49,6 +49,7 @@ namespace Microsoft.VisualStudio.Services.Agent
 #endif
         public static string TFBuild = "TF_BUILD";
         public static string ProcessLookupId = "VSTS_PROCESS_LOOKUP_ID";
+        public static string PluginTracePrefix = "##[plugin.trace]";
 
         // This enum is embedded within the Constants class to make it easier to reference and avoid
         // ambiguous type reference with System.Runtime.InteropServices.OSPlatform and System.Runtime.InteropServices.Architecture
@@ -304,9 +305,11 @@ namespace Microsoft.VisualStudio.Services.Agent
                 public static readonly string ProxyUsername = "agent.proxyusername";
                 public static readonly string ProxyPassword = "agent.proxypassword";
                 public static readonly string ProxyBypassList = "agent.proxybypasslist";
+                public static readonly string RetainDefaultEncoding = "agent.retainDefaultEncoding";
                 public static readonly string RootDirectory = "agent.RootDirectory";
                 public static readonly string RunMode = "agent.runmode";
                 public static readonly string ServerOMDirectory = "agent.ServerOMDirectory";
+                public static readonly string ServicePortPrefix = "agent.services";
                 public static readonly string SslCAInfo = "agent.cainfo";
                 public static readonly string SslClientCert = "agent.clientcert";
                 public static readonly string SslClientCertKey = "agent.clientcertkey";

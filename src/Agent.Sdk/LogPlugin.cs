@@ -18,12 +18,18 @@ namespace Agent.Sdk
 {
     public interface IAgentLogPlugin
     {
+        // Short meaningful name for the plugin.
+        // Any outputs from the pluging will be prefixed with the name.
         string FriendlyName { get; }
 
+        // Get call when plugin host load up all plugins for the first time.
+        // return `False` will tells the plugin host not longer forward log line to the plugin
         Task<bool> InitializeAsync(IAgentLogPluginContext context);
 
+        // Get called by plugin host on every log line.
         Task ProcessLineAsync(IAgentLogPluginContext context, Pipelines.TaskStepDefinitionReference step, string line);
 
+        // Get called by plugin host when all step execute finish.
         Task FinalizeAsync(IAgentLogPluginContext context);
     }
 
@@ -299,7 +305,7 @@ namespace Agent.Sdk
                 {
                     // start process plugins background
                     _trace.Trace($"Start process task for plugin '{plugin.FriendlyName}'");
-                    var task =  RunAsync(plugin, tokenSource.Token);
+                    var task = RunAsync(plugin, tokenSource.Token);
                     processTasks[plugin.FriendlyName] = task;
                 }
 
@@ -308,8 +314,6 @@ namespace Agent.Sdk
                 tokenSource.Cancel();
 
                 _trace.Trace($"Wait for all plugins finish process outputs.");
-                await Task.WhenAll(processTasks.Values);
-
                 foreach (var task in processTasks)
                 {
                     try
@@ -345,8 +349,6 @@ namespace Agent.Sdk
                 }
 
                 _trace.Trace($"Wait for all plugins finish finalization.");
-                await Task.WhenAll(finalizeTasks.Values);
-
                 foreach (var task in finalizeTasks)
                 {
                     try
@@ -359,12 +361,14 @@ namespace Agent.Sdk
                         _trace.Output($"Plugin '{task.Key}' failed with: {ex}");
                     }
                 }
+
+                _trace.Trace($"All plugins finished finalization.");
             }
         }
 
         public void EnqueueOutput(string output)
         {
-            if (!string.IsNullOrEmpty(output))
+            if (!String.IsNullOrEmpty(output))
             {
                 foreach (var plugin in _plugins)
                 {
@@ -384,10 +388,10 @@ namespace Agent.Sdk
 
         private async Task StartMemoryUsageMonitor(CancellationToken token)
         {
-            Dictionary<string, Int32> flag = new Dictionary<string, int>();
+            Dictionary<string, Int32> pluginViolateFlags = new Dictionary<string, int>();
             foreach (var queue in _outputQueue)
             {
-                flag[queue.Key] = 0;
+                pluginViolateFlags[queue.Key] = 0;
             }
 
             _trace.Trace($"Start output buffer monitor.");
@@ -395,6 +399,7 @@ namespace Agent.Sdk
             {
                 foreach (var queue in _outputQueue)
                 {
+                    string pluginName = queue.Key;
                     if (token.IsCancellationRequested)
                     {
                         break;
@@ -402,18 +407,18 @@ namespace Agent.Sdk
 
                     if (queue.Value.Count > _shortCircuitThreshold)
                     {
-                        _trace.Trace($"Plugin '{queue.Key}' has too many buffered outputs.");
-                        flag[queue.Key]++;
-                        if (flag[queue.Key] >= 10)
+                        _trace.Trace($"Plugin '{pluginName}' has too many buffered outputs.");
+                        pluginViolateFlags[pluginName]++;
+                        if (pluginViolateFlags[pluginName] >= 10)
                         {
-                            _trace.Trace($"Short circuit plugin '{queue.Key}'.");
-                            _shortCircuited[queue.Key].TrySetResult(0);
+                            _trace.Trace($"Short circuit plugin '{pluginName}'.");
+                            _shortCircuited[pluginName].TrySetResult(0);
                         }
                     }
-                    else
+                    else if (pluginViolateFlags[pluginName] > 0)
                     {
-                        _trace.Trace($"Plugin '{queue.Key}' has cleared out buffered outputs.");
-                        flag[queue.Key] = 0;
+                        _trace.Trace($"Plugin '{pluginName}' has cleared out buffered outputs.");
+                        pluginViolateFlags[pluginName] = 0;
                     }
                 }
 
@@ -431,7 +436,6 @@ namespace Agent.Sdk
             try
             {
                 initialized = await plugin.InitializeAsync(context);
-
             }
             catch (Exception ex)
             {
@@ -442,7 +446,7 @@ namespace Agent.Sdk
             {
                 if (!initialized)
                 {
-                    context.Output("Skip process outputs base on plugin initialize result.");
+                    context.Trace("Skip process outputs base on plugin initialize result.");
                     _shortCircuited[typeName].TrySetResult(0);
                 }
             }
@@ -452,35 +456,13 @@ namespace Agent.Sdk
                                           var depth = _outputQueue[typeName].Count;
                                           if (depth > 0)
                                           {
-                                              context.Output($"Pending process {depth} log lines.");
+                                              context.Output($"Waiting for log plugin to finish, pending process {depth} log lines.");
                                           }
                                       }))
             {
                 while (!_shortCircuited[typeName].Task.IsCompleted && !token.IsCancellationRequested)
                 {
-                    while (!_shortCircuited[typeName].Task.IsCompleted && _outputQueue[typeName].TryDequeue(out string line))
-                    {
-                        try
-                        {
-                            var id = line.Substring(0, line.IndexOf(":"));
-                            var message = line.Substring(line.IndexOf(":") + 1);
-                            var processLineTask = plugin.ProcessLineAsync(context, _steps[id], message);
-                            var completedTask = await Task.WhenAny(_shortCircuited[typeName].Task, processLineTask);
-                            if (completedTask == processLineTask)
-                            {
-                                await processLineTask;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // ignore exception
-                            // only trace the first 10 errors.
-                            if (errors.Count < 10)
-                            {
-                                errors.Add(ex.ToString());
-                            }
-                        }
-                    }
+                    await ProcessOutputQueue(context, plugin, errors);
 
                     // back-off before pull output queue again.
                     await Task.Delay(500);
@@ -489,6 +471,32 @@ namespace Agent.Sdk
 
             // process all remaining outputs
             context.Trace("Process remaining outputs after job finished.");
+            await ProcessOutputQueue(context, plugin, errors);
+
+            // print out the plugin has been short circuited.
+            if (_shortCircuited[typeName].Task.IsCompleted)
+            {
+                if (initialized)
+                {
+                    context.Output($"Plugin has been short circuited due to exceed memory usage limit.");
+                }
+
+                _outputQueue[typeName].Clear();
+            }
+
+            // print out error to user.
+            if (errors.Count > 0)
+            {
+                foreach (var error in errors)
+                {
+                    context.Output($"Fail to process output: {error}");
+                }
+            }
+        }
+
+        private async Task ProcessOutputQueue(IAgentLogPluginContext context, IAgentLogPlugin plugin, List<string> errors)
+        {
+            string typeName = plugin.GetType().FullName;
             while (!_shortCircuited[typeName].Task.IsCompleted && _outputQueue[typeName].TryDequeue(out string line))
             {
                 try
@@ -508,28 +516,8 @@ namespace Agent.Sdk
                     // only trace the first 10 errors.
                     if (errors.Count < 10)
                     {
-                        errors.Add(ex.ToString());
+                        errors.Add($"{ex} '(line)'");
                     }
-                }
-            }
-
-            // print out the plugin has been short circuited.
-            if (_shortCircuited[typeName].Task.IsCompleted)
-            {
-                if (initialized)
-                {
-                    context.Output($"Plugin has been short circuited due to exceed memory usage limit.");
-                }
-
-                _outputQueue[typeName].Clear();
-            }
-
-            // print out error to user.
-            if (errors.Count > 0)
-            {
-                foreach (var error in errors)
-                {
-                    context.Output($"Fail to process output: {error}");
                 }
             }
         }
