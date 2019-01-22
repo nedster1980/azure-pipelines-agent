@@ -35,30 +35,30 @@ namespace Agent.Plugins.TestResultParser.Plugin
                     State = "Completed",
                     AutomatedTestType = "LogParser",
                     Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.Passed.ToString()
-
                 });
             }
 
-            foreach (var passedTest in testRun.FailedTests)
+            foreach (var failedTest in testRun.FailedTests)
             {
                 testResults.Add(new TestCaseResult
                 {
-                    TestCaseTitle = passedTest.Name,
-                    AutomatedTestName = passedTest.Name,
-                    DurationInMs = passedTest.ExecutionTime.TotalMilliseconds,
+                    TestCaseTitle = failedTest.Name,
+                    AutomatedTestName = failedTest.Name,
+                    DurationInMs = failedTest.ExecutionTime.TotalMilliseconds,
                     State = "Completed",
                     AutomatedTestType = "LogParser",
-                    Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.Failed.ToString()
+                    Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.Failed.ToString(),
+                    StackTrace = failedTest.StackTrace
                 });
             }
 
-            foreach (var passedTest in testRun.SkippedTests)
+            foreach (var skippedTest in testRun.SkippedTests)
             {
                 testResults.Add(new TestCaseResult
                 {
-                    TestCaseTitle = passedTest.Name,
-                    AutomatedTestName = passedTest.Name,
-                    DurationInMs = passedTest.ExecutionTime.TotalMilliseconds,
+                    TestCaseTitle = skippedTest.Name,
+                    AutomatedTestName = skippedTest.Name,
+                    DurationInMs = skippedTest.ExecutionTime.TotalMilliseconds,
                     State = "Completed",
                     AutomatedTestType = "LogParser",
                     Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.NotExecuted.ToString()
