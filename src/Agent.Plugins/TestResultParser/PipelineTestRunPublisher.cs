@@ -72,13 +72,14 @@ namespace Agent.Plugins.TestResultParser.Plugin
 
             _httpClient.AddTestResultsToTestRunAsync(testResults.ToArray(), _pipelineConfig.Project, run.Id).SyncResult();
 
-            var testOutcome = testRun.TestRunSummary.TotalPassed < testRun.TestRunSummary.TotalTests ? TestOutcome.Failed : TestOutcome.Passed;
             var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString())
             {
                 RunSummary = new List<RunSummaryModel>()
             };
-            runUpdateModel.RunSummary.Add(
-                new RunSummaryModel(duration: testRun.TestRunSummary.TotalExecutionTime.Ticks, resultCount: testRun.TestRunSummary.TotalTests, testOutcome: testOutcome));
+
+            runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalFailed, testOutcome: TestOutcome.Failed));
+            runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalPassed, testOutcome: TestOutcome.Passed));
+            runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalSkipped, testOutcome: TestOutcome.NotExecuted));
 
 
             await _httpClient.UpdateTestRunAsync(runUpdateModel, _pipelineConfig.Project, run.Id);
