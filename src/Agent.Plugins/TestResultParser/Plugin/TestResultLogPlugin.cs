@@ -54,10 +54,7 @@ namespace Agent.Plugins.Log
         /// <inheritdoc />
         public async Task FinalizeAsync(IAgentLogPluginContext context)
         {
-            await Task.Run(() =>
-            {
-                _inputDataParser.Complete();
-            });
+            await _inputDataParser.CompleteAsync();
         }
 
         private bool CheckForPluginDisable(IAgentLogPluginContext context)

@@ -18,6 +18,6 @@ namespace Agent.Plugins.TestResultParser.Plugin
         /// <summary>
         /// Complete parsing the data
         /// </summary>
-        void Complete();
+        Task CompleteAsync();
     }
 }

@@ -40,13 +40,13 @@ namespace Agent.Plugins.TestResultParser.Plugin
         }
 
         /// <inheritdoc />
-        public void Complete()
+        public async Task CompleteAsync()
         {
             try
             {
                 _broadcast.Complete();
                 Task.WaitAll(_subscribers.Values.Select(x => x.Completion).ToArray());
-                _testRunManager.FinalizeAsync().RunSynchronously();
+                await _testRunManager.FinalizeAsync();
             }
             catch (Exception ex)
             {

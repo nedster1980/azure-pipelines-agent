@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Agent.Plugins.Log.TestResultParser.Contracts;
@@ -42,7 +43,14 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
         /// </summary>
         public async Task FinalizeAsync()
         {
-            await Task.Run(() => { Task.WaitAll(_runningTasks.ToArray()); });
+            try
+            {
+                await Task.WhenAll(_runningTasks.ToArray());
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"TestRunManager.FinalizeAsync: Failed to complete test run. Error: {ex}");
+            }
         }
 
         private TestRun ValidateAndPrepareForPublish(TestRun testRun)
