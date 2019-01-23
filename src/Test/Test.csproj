@@ -12,6 +12,13 @@
     <ProjectReference Include="..\Agent.Listener\Agent.Listener.csproj" />
     <ProjectReference Include="..\Microsoft.VisualStudio.Services.Agent\Microsoft.VisualStudio.Services.Agent.csproj" />
     <ProjectReference Include="..\Agent.Worker\Agent.Worker.csproj" />
+    <ProjectReference Include="..\Agent.Plugins\Agent.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Agent.Plugins.Log.TestResultParser.Contracts">
+      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Contracts.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
