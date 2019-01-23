@@ -114,6 +114,12 @@ function build ()
 
 function layout ()
 {
+    ## remove layout folder
+    rm -rf ${LAYOUT_DIR}
+    
+    heading "Setup externals folder for $RUNTIME_ID agent's layout"
+    bash ./Misc/externals.sh $RUNTIME_ID || checkRC externals.sh
+
     heading "Create layout ..."
 
     if [[ ("$CURRENT_PLATFORM" == "windows") ]]; then
@@ -126,15 +132,12 @@ function layout ()
     grep --invert-match '^ *"CLI-WIDTH-' ./Misc/layoutbin/en-US/strings.json > ${LAYOUT_DIR}/bin/en-US/strings.json
 
     #change execution flag to allow running with sudo
-    if [[ ("$CURRENT_PLATFORM" == "linux") || ("$CURRENT_PLATFORM" == "darwin") ]]; then
+    if [[ ("$CURRENT_PLATFORM" == "linux") || ("$CURRENT_PLATFORM" == "darwin") ]]; then    x
         chmod +x ${LAYOUT_DIR}/bin/Agent.Listener
         chmod +x ${LAYOUT_DIR}/bin/Agent.Worker
         chmod +x ${LAYOUT_DIR}/bin/Agent.PluginHost
         chmod +x ${LAYOUT_DIR}/bin/installdependencies.sh
     fi
-
-    heading "Setup externals folder for $RUNTIME_ID agent's layout"
-    bash ./Misc/externals.sh $RUNTIME_ID || checkRC externals.sh
 }
 
 function runtest ()

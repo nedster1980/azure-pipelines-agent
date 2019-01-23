@@ -24,10 +24,10 @@
 
   <ItemGroup>
     <Reference Include="Agent.Plugins.Log.TestResultParser.Contracts">
-      <HintPath>..\..\..\TestResultParser\Agent.Plugins.Log.TestResultParser.Contracts\bin\Debug\netcoreapp2.1\Agent.Plugins.Log.TestResultParser.Contracts.dll</HintPath>
+      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Contracts.dll</HintPath>
     </Reference>
     <Reference Include="Agent.Plugins.Log.TestResultParser.Parser">
-      <HintPath>..\..\..\TestResultParser\Agent.Plugins.Log.TestResultParser.Parser\bin\Debug\netcoreapp2.1\Agent.Plugins.Log.TestResultParser.Parser.dll</HintPath>
+      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Parser.dll</HintPath>
     </Reference>
   </ItemGroup>
 
