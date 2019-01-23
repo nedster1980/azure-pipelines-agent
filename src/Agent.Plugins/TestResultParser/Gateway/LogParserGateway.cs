@@ -11,6 +11,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
 
     public class LogParserGateway : ILogParserGateway, IBus<LogData>
     {
+        /// <inheritdoc />
         public void Initialize(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger)
         {
             _logger = traceLogger;
@@ -26,6 +27,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             }
         }
 
+        /// <inheritdoc />
         public async Task ProcessDataAsync(string data)
         {
             var logData = new LogData
@@ -37,6 +39,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             await _broadcast.SendAsync(logData);
         }
 
+        /// <inheritdoc />
         public void Complete()
         {
             try
@@ -51,7 +54,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             }
         }
 
-        //TODO evaluate ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 2 }
+        /// <inheritdoc />
         public Guid Subscribe(Action<LogData> handlerAction)
         {
             var handler = new ActionBlock<LogData>(handlerAction);
@@ -61,6 +64,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             return AddSubscription(handler);
         }
 
+        /// <inheritdoc />
         public void Unsubscribe(Guid subscriptionId)
         {
             if (_subscribers.TryRemove(subscriptionId, out var subscription))

@@ -24,6 +24,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             //do nothing
         }
 
+        /// <inheritdoc />
         public Task PublishTelemetryAsync(string eventArea, string eventName, Dictionary<string, object> value)
         {
             var ciEvent = new CustomerIntelligenceEvent

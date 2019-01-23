@@ -11,8 +11,10 @@ namespace Agent.Plugins.Log
 {
     public class TestResultLogPlugin : IAgentLogPlugin
     {
+        /// <inheritdoc />
         public string FriendlyName => "Test Result Log Parser";
 
+        /// <inheritdoc />
         public async Task<bool> InitializeAsync(IAgentLogPluginContext context)
         {
             return await Task.Run(() =>
@@ -24,7 +26,6 @@ namespace Agent.Plugins.Log
                         return false; // disable the plugin
                     }
 
-
                     PopulatePipelineConfig(context);
 
                     _clientFactory = new ClientFactory(context.VssConnection);
@@ -35,7 +36,6 @@ namespace Agent.Plugins.Log
                 }
                 catch (Exception ex)
                 {
-
                     _logger.Warning($"Unable to initialize {FriendlyName}");
                     context.Trace(ex.StackTrace);
                     return false;
@@ -45,11 +45,13 @@ namespace Agent.Plugins.Log
             });
         }
 
+        /// <inheritdoc />
         public async Task ProcessLineAsync(IAgentLogPluginContext context, Pipelines.TaskStepDefinitionReference step, string line)
         {
             await _inputDataParser.ProcessDataAsync(line);
         }
 
+        /// <inheritdoc />
         public async Task FinalizeAsync(IAgentLogPluginContext context)
         {
             await Task.Run(() =>

@@ -4,6 +4,9 @@ namespace Agent.Plugins.TestResultParser.Plugin
 {
     public interface IClientFactory
     {
+        /// <summary>
+        /// Access any pipeline client through factory
+        /// </summary>
         T GetClient<T>() where T : VssHttpClientBase;
     }
 
@@ -14,6 +17,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             _vssConnection = vssConnection;
         }
 
+        /// <inheritdoc />
         public T GetClient<T>() where T : VssHttpClientBase
         {
             return _vssConnection.GetClient<T>();
@@ -21,5 +25,4 @@ namespace Agent.Plugins.TestResultParser.Plugin
 
         private readonly VssConnection _vssConnection;
     }
-
 }

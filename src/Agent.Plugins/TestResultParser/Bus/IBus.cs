@@ -4,10 +4,14 @@ namespace Agent.Plugins.TestResultParser.Plugin
 {
     public interface IBus<out TMessage>
     {
-        /* Subscribe to Message Bus to receive messages via Pub-Sub model */
+        /// <summary>
+        /// Subscribe to Message Bus to receive messages via Pub-Sub model
+        /// </summary>
         Guid Subscribe(Action<TMessage> handlerAction);
 
-        /* Unsubscribe to Message Bus so that subscriber no longer receives messages */
+        /// <summary>
+        /// Unsubscribe to Message Bus so that subscriber no longer receives messages
+        /// </summary>
         void Unsubscribe(Guid subscriptionId);
     }
 }

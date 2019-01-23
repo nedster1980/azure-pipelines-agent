@@ -5,12 +5,19 @@ namespace Agent.Plugins.TestResultParser.Plugin
 {
     public interface ILogParserGateway
     {
-        /* Register all parsers which needs to parse the task console stream */
+        /// <summary>
+        /// Register all parsers which needs to parse the task console stream
+        /// </summary>
         void Initialize(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger);
 
-        /* Process the task output data */
+        /// <summary>
+        /// Process the task output data
+        /// </summary>
         Task ProcessDataAsync(string data);
 
+        /// <summary>
+        /// Complete parsing the data
+        /// </summary>
         void Complete();
     }
 }

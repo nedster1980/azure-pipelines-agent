@@ -7,7 +7,6 @@ using Agent.Plugins.Log.TestResultParser.Contracts;
 
 namespace Agent.Plugins.Log.TestResultParser.Plugin
 {
-
     /// <inheritdoc/>
     public class TestRunManager : ITestRunManager
     {
@@ -24,7 +23,9 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
             _logger = logger;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Publish test run to pipeline
+        /// </summary>
         public async Task PublishAsync(TestRun testRun)
         {
             var validatedTestRun = this.ValidateAndPrepareForPublish(testRun);
@@ -36,6 +37,9 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
             }
         }
 
+        /// <summary>
+        /// Complete pending test runs
+        /// </summary>
         public async Task FinalizeAsync()
         {
             await Task.Run(() => { Task.WaitAll(_runningTasks.ToArray()); });
@@ -59,14 +63,21 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
             if (testRun.TestRunSummary.TotalPassed != testRun.PassedTests?.Count)
             {
                 _logger.Warning("TestRunManger.ValidateAndPrepareForPublish : Passed test count does not match the Test summary.");
-                testRun.PassedTests = null;
+                testRun.PassedTests = new List<TestResult>();
             }
 
             // Match the failed test count and clear the failed tests collection if mismatch occurs
             if (testRun.TestRunSummary.TotalFailed != testRun.FailedTests?.Count)
             {
                 _logger.Warning("TestRunManger.ValidateAndPrepareForPublish : Failed test count does not match the Test summary.");
-                testRun.FailedTests = null;
+                testRun.FailedTests = new List<TestResult>();
+            }
+
+            // Match the skipped test count and clear the failed tests collection if mismatch occurs
+            if (testRun.TestRunSummary.TotalSkipped != testRun.SkippedTests?.Count)
+            {
+                _logger.Warning("TestRunManger.ValidateAndPrepareForPublish : Skipped test count does not match the Test summary.");
+                testRun.SkippedTests = new List<TestResult>();
             }
 
             return testRun;

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Agent.Plugins.Log.TestResultParser.Contracts;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
+using TestOutcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome;
 using TestRun = Agent.Plugins.Log.TestResultParser.Contracts.TestRun;
 
 namespace Agent.Plugins.TestResultParser.Plugin
@@ -18,9 +19,12 @@ namespace Agent.Plugins.TestResultParser.Plugin
             _httpClient = clientFactory.GetClient<TestManagementHttpClient>();
         }
 
+        /// <inheritdoc />
         public async Task PublishAsync(TestRun testRun)
         {
-            var r = new RunCreateModel(name: "Log parsed test run", buildId: _pipelineConfig.BuildId, state: TestRunState.InProgress.ToString(), isAutomated: true);
+            var runUri = testRun.ParserUri.Split("/");
+            var r = new RunCreateModel(name: $"{runUri[0]} test run {testRun.TestRunId}- automatically inferred results", buildId: _pipelineConfig.BuildId,
+                state: TestRunState.InProgress.ToString(), isAutomated: true, type: RunType.NoConfigRun.ToString());
             var run = _httpClient.CreateTestRunAsync(r, _pipelineConfig.Project).SyncResult();
 
             var testResults = new List<TestCaseResult>();
@@ -33,8 +37,8 @@ namespace Agent.Plugins.TestResultParser.Plugin
                     AutomatedTestName = passedTest.Name,
                     DurationInMs = passedTest.ExecutionTime.TotalMilliseconds,
                     State = "Completed",
-                    AutomatedTestType = "LogParser",
-                    Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.Passed.ToString()
+                    AutomatedTestType = "NoConfig",
+                    Outcome = TestOutcome.Passed.ToString()
                 });
             }
 
@@ -46,8 +50,8 @@ namespace Agent.Plugins.TestResultParser.Plugin
                     AutomatedTestName = failedTest.Name,
                     DurationInMs = failedTest.ExecutionTime.TotalMilliseconds,
                     State = "Completed",
-                    AutomatedTestType = "LogParser",
-                    Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.Failed.ToString(),
+                    AutomatedTestType = "NoConfig",
+                    Outcome = TestOutcome.Failed.ToString(),
                     StackTrace = failedTest.StackTrace
                 });
             }
@@ -60,14 +64,24 @@ namespace Agent.Plugins.TestResultParser.Plugin
                     AutomatedTestName = skippedTest.Name,
                     DurationInMs = skippedTest.ExecutionTime.TotalMilliseconds,
                     State = "Completed",
-                    AutomatedTestType = "LogParser",
-                    Outcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome.NotExecuted.ToString()
+                    AutomatedTestType = "NoConfig",
+                    Outcome = TestOutcome.NotExecuted.ToString()
 
                 });
             }
 
             _httpClient.AddTestResultsToTestRunAsync(testResults.ToArray(), _pipelineConfig.Project, run.Id).SyncResult();
-            await _httpClient.UpdateTestRunAsync(new RunUpdateModel(state: TestRunState.Completed.ToString()), _pipelineConfig.Project, run.Id);
+
+            var testOutcome = testRun.TestRunSummary.TotalPassed < testRun.TestRunSummary.TotalTests ? TestOutcome.Failed : TestOutcome.Passed;
+            var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString())
+            {
+                RunSummary = new List<RunSummaryModel>()
+            };
+            runUpdateModel.RunSummary.Add(
+                new RunSummaryModel(duration: testRun.TestRunSummary.TotalExecutionTime.Ticks, resultCount: testRun.TestRunSummary.TotalTests, testOutcome: testOutcome));
+
+
+            await _httpClient.UpdateTestRunAsync(runUpdateModel, _pipelineConfig.Project, run.Id);
         }
 
         private readonly TestManagementHttpClient _httpClient;

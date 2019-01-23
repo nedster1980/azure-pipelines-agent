@@ -12,21 +12,25 @@ namespace Agent.Plugins.TestResultParser.Plugin
 
         #region interface implementation
 
+        /// <inheritdoc />
         void ITraceLogger.Warning(string text)
         {
             _context.Output($"##vso[task.logissue type=warning;]{text}");
         }
 
+        /// <inheritdoc />
         void ITraceLogger.Error(string error)
         {
             _context.Output($"##vso[task.logissue type=error;]{error}");
         }
 
+        /// <inheritdoc />
         void ITraceLogger.Verbose(string text)
         {
             _context.Output($"##vso[task.debug]{text}");
         }
 
+        /// <inheritdoc />
         void ITraceLogger.Info(string text)
         {
             _context.Output(text);
