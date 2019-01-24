@@ -73,7 +73,7 @@ function acquireExternalTool() {
             # We might use them during dev.sh
             if [[ "$download_basename" == *.zip ]]; then
                 # Extract the zip.
-                echo "Testing zip $download_dir"
+                echo "Testing zip"
                 unzip "$download_target" -d "$download_dir" > /dev/null
                 local rc=$?
                 if [[ $rc -ne 0 && $rc -ne 1 ]]; then
