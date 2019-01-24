@@ -8,7 +8,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
         /// <summary>
         /// Register all parsers which needs to parse the task console stream
         /// </summary>
-        void Initialize(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger);
+        Task InitializeAsync(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger);
 
         /// <summary>
         /// Process the task output data

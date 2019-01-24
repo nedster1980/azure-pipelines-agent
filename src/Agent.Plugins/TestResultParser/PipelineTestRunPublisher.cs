@@ -25,7 +25,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
             var runUri = testRun.ParserUri.Split("/");
             var r = new RunCreateModel(name: $"{runUri[0]} test run {testRun.TestRunId} - automatically inferred results", buildId: _pipelineConfig.BuildId,
                 state: TestRunState.InProgress.ToString(), isAutomated: true /*, type: RunType.NoConfigRun.ToString()*/);
-            var run = _httpClient.CreateTestRunAsync(r, _pipelineConfig.Project).SyncResult();
+            var run = await _httpClient.CreateTestRunAsync(r, _pipelineConfig.Project);
 
             var testResults = new List<TestCaseResult>();
 
@@ -70,7 +70,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
                 });
             }
 
-            _httpClient.AddTestResultsToTestRunAsync(testResults.ToArray(), _pipelineConfig.Project, run.Id).SyncResult();
+            await _httpClient.AddTestResultsToTestRunAsync(testResults.ToArray(), _pipelineConfig.Project, run.Id);
 
             var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString());
             /*

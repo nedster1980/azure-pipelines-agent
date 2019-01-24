@@ -32,10 +32,9 @@ namespace Test.L0.Plugin.TestResultParser
                 }
             });
 
-            var task = plugin.InitializeAsync(agentContext.Object);
-            await task;
+            var result = await plugin.InitializeAsync(agentContext.Object);
 
-            Assert.True(task.Result == false);
+            Assert.True(result == false);
         }
 
         [Fact]
@@ -54,10 +53,9 @@ namespace Test.L0.Plugin.TestResultParser
                 }
             });
 
-            var task = plugin.InitializeAsync(agentContext.Object);
-            await task;
-
-            Assert.True(task.Result == false);
+            var result = await plugin.InitializeAsync(agentContext.Object);
+            
+            Assert.True(result == false);
         }
 
         [Fact]
@@ -81,12 +79,11 @@ namespace Test.L0.Plugin.TestResultParser
             });
             logParser.Setup(x => x.Initialize(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()))
                 .Throws(new Exception("some exception"));
-
             var plugin = new TestResultLogPlugin() { InputDataParser = logParser.Object };
-            var task = plugin.InitializeAsync(agentContext.Object);
-            await task;
+    
+            var result = await plugin.InitializeAsync(agentContext.Object);
 
-            Assert.True(task.Result == false);
+            Assert.True(result == false);
             agentContext.Verify(x => x.Output(It.Is<string>(msg => msg.Contains("Unable to initialize Test Result Log Parser"))), Times.Once);
         }
 
@@ -115,10 +112,9 @@ namespace Test.L0.Plugin.TestResultParser
             logParser.Setup(x => x.Initialize(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()));
 
             var plugin = new TestResultLogPlugin() { InputDataParser = logParser.Object };
-            var task = plugin.InitializeAsync(agentContext.Object);
-            await task;
+            var result = await plugin.InitializeAsync(agentContext.Object);
 
-            Assert.True(task.Result == true);
+            Assert.True(result == true);
         }
     }
 }

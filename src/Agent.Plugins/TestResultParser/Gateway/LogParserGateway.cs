@@ -12,19 +12,22 @@ namespace Agent.Plugins.TestResultParser.Plugin
     public class LogParserGateway : ILogParserGateway, IBus<LogData>
     {
         /// <inheritdoc />
-        public void Initialize(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger)
+        public async Task InitializeAsync(IClientFactory clientFactory, IPipelineConfig pipelineConfig, ITraceLogger traceLogger)
         {
-            _logger = traceLogger;
-            var publisher = new PipelineTestRunPublisher(clientFactory, pipelineConfig);
-            var telemetry = new TelemetryDataCollector(clientFactory);
-            _testRunManager = new TestRunManager(publisher, _logger);
-            var parsers = ParserFactory.GetTestResultParsers(_testRunManager, traceLogger, telemetry);
-
-            foreach (var parser in parsers)
+            await Task.Run(() =>
             {
-                //Subscribe parsers to Pub-Sub model
-                Subscribe(parser.Parse);
-            }
+                _logger = traceLogger;
+                var publisher = new PipelineTestRunPublisher(clientFactory, pipelineConfig);
+                var telemetry = new TelemetryDataCollector(clientFactory);
+                _testRunManager = new TestRunManager(publisher, _logger);
+                var parsers = ParserFactory.GetTestResultParsers(_testRunManager, traceLogger, telemetry);
+
+                foreach (var parser in parsers)
+                {
+                    //Subscribe parsers to Pub-Sub model
+                    Subscribe(parser.Parse);
+                }
+            });
         }
 
         /// <inheritdoc />

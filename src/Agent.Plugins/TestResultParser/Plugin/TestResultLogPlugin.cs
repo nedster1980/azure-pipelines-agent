@@ -17,31 +17,28 @@ namespace Agent.Plugins.Log
         /// <inheritdoc />
         public async Task<bool> InitializeAsync(IAgentLogPluginContext context)
         {
-            return await Task.Run(() =>
+            try
             {
-                try
-                {
-                    _logger = new TraceLogger(context);
-                    _clientFactory = new ClientFactory(context.VssConnection);
+                _logger = new TraceLogger(context);
+                _clientFactory = new ClientFactory(context.VssConnection);
 
-                    PopulatePipelineConfig(context);
+                PopulatePipelineConfig(context);
 
-                    if (CheckForPluginDisable(context))
-                    {
-                        return false; // disable the plugin
-                    }
-                    
-                    InputDataParser.Initialize(_clientFactory, _pipelineConfig, _logger);
-                }
-                catch (Exception ex)
+                if (CheckForPluginDisable(context))
                 {
-                    _logger.Warning($"Unable to initialize {FriendlyName}");
-                    context.Trace(ex.StackTrace);
-                    return false;
+                    return false; // disable the plugin
                 }
 
-                return true;
-            });
+                await InputDataParser.InitializeAsync(_clientFactory, _pipelineConfig, _logger);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Unable to initialize {FriendlyName}");
+                context.Trace(ex.StackTrace);
+                return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
