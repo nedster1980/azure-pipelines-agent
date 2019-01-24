@@ -21,18 +21,17 @@ namespace Agent.Plugins.Log
             {
                 try
                 {
+                    _logger = new TraceLogger(context);
+                    _clientFactory = new ClientFactory(context.VssConnection);
+
+                    PopulatePipelineConfig(context);
+
                     if (CheckForPluginDisable(context))
                     {
                         return false; // disable the plugin
                     }
-
-                    PopulatePipelineConfig(context);
-
-                    _clientFactory = new ClientFactory(context.VssConnection);
-                    _inputDataParser = new LogParserGateway();
-                    _logger = new TraceLogger(context);
-
-                    _inputDataParser.Initialize(_clientFactory, _pipelineConfig, _logger);
+                    
+                    InputDataParser.Initialize(_clientFactory, _pipelineConfig, _logger);
                 }
                 catch (Exception ex)
                 {
@@ -48,19 +47,22 @@ namespace Agent.Plugins.Log
         /// <inheritdoc />
         public async Task ProcessLineAsync(IAgentLogPluginContext context, Pipelines.TaskStepDefinitionReference step, string line)
         {
-            await _inputDataParser.ProcessDataAsync(line);
+            await InputDataParser.ProcessDataAsync(line);
         }
 
         /// <inheritdoc />
         public async Task FinalizeAsync(IAgentLogPluginContext context)
         {
-            await _inputDataParser.CompleteAsync();
+            await InputDataParser.CompleteAsync();
         }
 
         private bool CheckForPluginDisable(IAgentLogPluginContext context)
         {
-            return context.Steps == null || context.Steps.Any(x => x.Id.Equals(new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")));
             // check for PTR task or some other tasks to enable/disable
+            return context.Steps == null
+                   || context.Steps.Any(x => x.Id.Equals(new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")))
+                   || _pipelineConfig.BuildId == 0;
+            // disable in release pipeline
         }
 
         private void PopulatePipelineConfig(IAgentLogPluginContext context)
@@ -76,7 +78,7 @@ namespace Agent.Plugins.Log
             }
         }
 
-        private ILogParserGateway _inputDataParser;
+        public ILogParserGateway InputDataParser { get; set; } = new LogParserGateway(); //for testing purpose
         private IClientFactory _clientFactory;
         private ITraceLogger _logger;
         private readonly IPipelineConfig _pipelineConfig = new PipelineConfig();

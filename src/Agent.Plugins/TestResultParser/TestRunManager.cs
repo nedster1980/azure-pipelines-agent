@@ -67,6 +67,12 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
                 testRun.TestRunSummary.TotalTests = testRun.TestRunSummary.TotalFailed + testRun.TestRunSummary.TotalPassed + testRun.TestRunSummary.TotalSkipped;
             }
 
+            if (testRun.TestRunSummary.TotalTests == 0)
+            {
+                _logger.Error("TestRunManger.ValidateAndPrepareForPublish : No tests found.");
+                return null;
+            }
+
             // Match the passed test count and clear the passed tests collection if mismatch occurs
             if (testRun.TestRunSummary.TotalPassed != testRun.PassedTests?.Count)
             {
