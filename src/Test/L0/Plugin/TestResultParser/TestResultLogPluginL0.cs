@@ -77,7 +77,7 @@ namespace Test.L0.Plugin.TestResultParser
             {
                 {"build.buildId", new VariableValue("1") }
             });
-            logParser.Setup(x => x.Initialize(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()))
+            logParser.Setup(x => x.InitializeAsync(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()))
                 .Throws(new Exception("some exception"));
             var plugin = new TestResultLogPlugin() { InputDataParser = logParser.Object };
     
@@ -109,9 +109,10 @@ namespace Test.L0.Plugin.TestResultParser
             {
                 {"build.buildId", new VariableValue("1") }
             });
-            logParser.Setup(x => x.Initialize(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()));
+            logParser.Setup(x => x.InitializeAsync(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()))
+                .Returns(Task.CompletedTask);
 
-            var plugin = new TestResultLogPlugin() { InputDataParser = logParser.Object };
+            var plugin = new TestResultLogPlugin { InputDataParser = logParser.Object };
             var result = await plugin.InitializeAsync(agentContext.Object);
 
             Assert.True(result == true);
