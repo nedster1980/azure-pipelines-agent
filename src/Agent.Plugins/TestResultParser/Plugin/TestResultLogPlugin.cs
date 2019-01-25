@@ -55,6 +55,11 @@ namespace Agent.Plugins.Log
 
         private bool CheckForPluginDisable(IAgentLogPluginContext context)
         {
+            if (context.Variables.TryGetValue("test.disable.noconfig", out var disable) && !string.IsNullOrEmpty(disable.Value))
+            {
+                return true;
+            }
+
             // check for PTR task or some other tasks to enable/disable
             return context.Steps == null
                    || context.Steps.Any(x => x.Id.Equals(new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")))

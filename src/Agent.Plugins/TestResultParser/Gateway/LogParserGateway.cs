@@ -8,7 +8,6 @@ using Agent.Plugins.Log.TestResultParser.Plugin;
 
 namespace Agent.Plugins.TestResultParser.Plugin
 {
-
     public class LogParserGateway : ILogParserGateway, IBus<LogData>
     {
         /// <inheritdoc />

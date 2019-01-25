@@ -111,7 +111,7 @@ namespace Test.L0.Plugin.TestResultParser
                     TotalSkipped = 1,
                     TotalFailed = 1,
                     TotalExecutionTime = TimeSpan.FromMinutes(1),
-                    TotalTests = 5
+                    TotalTests = 6
                 }
             });
 

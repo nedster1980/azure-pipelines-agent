@@ -143,6 +143,34 @@ namespace Test.L0.Plugin.TestResultParser
         [Fact]
         [Trait("Level", "L0")]
         [Trait("Category", "Plugin")]
+        public async Task TestResultLogPlugin_DisableIfEnvVariableSet()
+        {
+            var agentContext = new Mock<IAgentLogPluginContext>();
+            var logParser = new Mock<ILogParserGateway>();
+
+            agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
+            {
+                new TaskStepDefinitionReference()
+                {
+                    Id = new Guid("1B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")
+                }
+            });
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"build.buildId", new VariableValue("1") },
+                {"build.repository.provider", new VariableValue("Github") },
+                {"test.disable.noconfig", new VariableValue("someval") }
+            });
+
+            var plugin = new TestResultLogPlugin() { InputDataParser = logParser.Object };
+            var result = await plugin.InitializeAsync(agentContext.Object);
+
+            Assert.True(result == false);
+        }
+
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", "Plugin")]
         public async Task TestResultLogPlugin_EnableForBuildPipeline()
         {
             var agentContext = new Mock<IAgentLogPluginContext>();
