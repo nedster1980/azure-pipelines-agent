@@ -7,6 +7,7 @@ using Agent.Plugins.Log.TestResultParser.Plugin;
 using Agent.Plugins.TestResultParser.Plugin;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.TestResults.WebApi;
 using Moq;
 using Xunit;
 using TestOutcome = Agent.Plugins.Log.TestResultParser.Contracts.TestOutcome;
@@ -22,14 +23,14 @@ namespace Test.L0.Plugin.TestResultParser
         public async Task PipelineTestRunPublisher_PublishTestRun()
         {
             var clientFactory = new Mock<IClientFactory>();
-            var testClient = new Mock<TestManagementHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
+            var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
             var pipelineConfig = new PipelineConfig()
             {
                 BuildId = 1,
                 Project = new Guid()
             };
 
-            clientFactory.Setup(x => x.GetClient<TestManagementHttpClient>()).Returns(testClient.Object);
+            clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
                 x.CreateTestRunAsync(It.IsAny<RunCreateModel>(), It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new Microsoft.TeamFoundation.TestManagement.WebApi.TestRun()));
@@ -69,14 +70,14 @@ namespace Test.L0.Plugin.TestResultParser
         public async Task PipelineTestRunPublisher_PublishTestRun_ValidateTestResults()
         {
             var clientFactory = new Mock<IClientFactory>();
-            var testClient = new Mock<TestManagementHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
+            var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
             var pipelineConfig = new PipelineConfig()
             {
                 BuildId = 1,
                 Project = new Guid()
             };
 
-            clientFactory.Setup(x => x.GetClient<TestManagementHttpClient>()).Returns(testClient.Object);
+            clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
                 x.CreateTestRunAsync(It.IsAny<RunCreateModel>(), It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new Microsoft.TeamFoundation.TestManagement.WebApi.TestRun()
