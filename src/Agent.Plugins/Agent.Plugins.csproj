@@ -20,15 +20,7 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="4.4.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.4.0" /> -->
     <PackageReference Include="vss-api-netcore" Version="0.5.95-private" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Agent.Plugins.Log.TestResultParser.Contracts">
-      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Contracts.dll</HintPath>
-    </Reference>
-    <Reference Include="Agent.Plugins.Log.TestResultParser.Parser">
-      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Parser.dll</HintPath>
-    </Reference>
+    <PackageReference Include="azuredevops-testresultparser" Version="0.0.2" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

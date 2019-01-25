@@ -16,12 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Agent.Plugins.Log.TestResultParser.Contracts">
-      <HintPath>..\..\_layout\externals\LogPlugin\Agent.Plugins.Log.TestResultParser.Contracts.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
@@ -30,6 +24,7 @@
     <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />
     <PackageReference Include="vss-api-netcore" Version="0.5.95-private" />
     <PackageReference Include="Moq" Version="4.6.36-alpha" />
+    <PackageReference Include="azuredevops-testresultparser" Version="0.0.2" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

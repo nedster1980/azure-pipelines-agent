@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Agent.Plugins.Log.TestResultParser.Contracts;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
-using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.VisualStudio.Services.TestResults.WebApi;
 using TestOutcome = Microsoft.TeamFoundation.TestManagement.WebApi.TestOutcome;
 using TestRun = Agent.Plugins.Log.TestResultParser.Contracts.TestRun;
 
@@ -16,7 +16,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
         public PipelineTestRunPublisher(IClientFactory clientFactory, IPipelineConfig pipelineConfig)
         {
             _pipelineConfig = pipelineConfig;
-            _httpClient = clientFactory.GetClient<TestManagementHttpClient>();
+            _httpClient = clientFactory.GetClient<TestResultsHttpClient>();
         }
 
         /// <inheritdoc />
@@ -24,7 +24,7 @@ namespace Agent.Plugins.TestResultParser.Plugin
         {
             var runUri = testRun.ParserUri.Split("/");
             var r = new RunCreateModel(name: $"{runUri[0]} test run {testRun.TestRunId} - automatically inferred results", buildId: _pipelineConfig.BuildId,
-                state: TestRunState.InProgress.ToString(), isAutomated: true /*, type: RunType.NoConfigRun.ToString()*/);
+                state: TestRunState.InProgress.ToString(), isAutomated: true, type: RunType.NoConfigRun.ToString());
             var run = await _httpClient.CreateTestRunAsync(r, _pipelineConfig.Project);
 
             var testResults = new List<TestCaseResult>();
@@ -72,8 +72,8 @@ namespace Agent.Plugins.TestResultParser.Plugin
 
             await _httpClient.AddTestResultsToTestRunAsync(testResults.ToArray(), _pipelineConfig.Project, run.Id);
 
-            var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString());
-            /*
+            //  var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString());
+
             var runUpdateModel = new RunUpdateModel(state: TestRunState.Completed.ToString())
             {
                 RunSummary = new List<RunSummaryModel>()
@@ -82,12 +82,12 @@ namespace Agent.Plugins.TestResultParser.Plugin
             runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalFailed, testOutcome: TestOutcome.Failed));
             runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalPassed, testOutcome: TestOutcome.Passed));
             runUpdateModel.RunSummary.Add(new RunSummaryModel(resultCount: testRun.TestRunSummary.TotalSkipped, testOutcome: TestOutcome.NotExecuted));
-            */
+
 
             await _httpClient.UpdateTestRunAsync(runUpdateModel, _pipelineConfig.Project, run.Id);
         }
 
-        private readonly TestManagementHttpClient _httpClient;
+        private readonly TestResultsHttpClient _httpClient;
         private readonly IPipelineConfig _pipelineConfig;
     }
 }

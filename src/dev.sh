@@ -114,12 +114,6 @@ function build ()
 
 function layout ()
 {
-    ## remove layout folder
-    rm -rf ${LAYOUT_DIR}
-    
-    heading "Setup externals folder for $RUNTIME_ID agent's layout"
-    bash ./Misc/externals.sh $RUNTIME_ID || checkRC externals.sh
-
     heading "Create layout ..."
 
     if [[ ("$CURRENT_PLATFORM" == "windows") ]]; then
@@ -138,6 +132,9 @@ function layout ()
         chmod +x ${LAYOUT_DIR}/bin/Agent.PluginHost
         chmod +x ${LAYOUT_DIR}/bin/installdependencies.sh
     fi
+
+    heading "Setup externals folder for $RUNTIME_ID agent's layout"
+    bash ./Misc/externals.sh $RUNTIME_ID || checkRC externals.sh
 }
 
 function runtest ()
