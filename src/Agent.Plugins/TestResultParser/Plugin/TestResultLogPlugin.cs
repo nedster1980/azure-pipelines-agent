@@ -58,8 +58,27 @@ namespace Agent.Plugins.Log
             // check for PTR task or some other tasks to enable/disable
             return context.Steps == null
                    || context.Steps.Any(x => x.Id.Equals(new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")))
-                   || _pipelineConfig.BuildId == 0;
+                   || _pipelineConfig.BuildId == 0
+                   || !IsValidGithubBuild(context);
+        }
+
+        private bool IsValidGithubBuild(IAgentLogPluginContext context)
+        {
             // disable in release pipeline
+            if (context.Variables.TryGetValue("release.releaseId", out var releaseIdValue)
+                && int.TryParse(releaseIdValue.Value, out var releaseId) && releaseId > 0)
+            {
+                return false;
+            }
+
+            // enable for github only
+            if (context.Variables.TryGetValue("build.repository.provider", out var repoProvider)
+                && "github".Equals(repoProvider.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private void PopulatePipelineConfig(IAgentLogPluginContext context)
