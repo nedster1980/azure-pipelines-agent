@@ -453,7 +453,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
                             {
                                 detailInfo = string.Join(Environment.NewLine, workerOutput);
                                 Trace.Info($"Return code {returnCode} indicate worker encounter an unhandled exception or app crash, attach worker stdout/stderr to JobRequest result.");
-                                await LogWorkerProcessUnhandledException(message, detailInfo);
+                                await LogUnhandledError(message, detailInfo);
                             }
 
                             TaskResult result = TaskResultUtil.TranslateFromReturnCode(returnCode);
@@ -469,11 +469,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
                             // complete job request
                             await CompleteJobRequestAsync(_poolId, message, lockToken, result, detailInfo);
 
-                            // print out unhandle exception happened in worker after we complete job request.
-                            // when we run out of disk space, report back to server has higher prority.
+                            // print out unhandled exception happened in worker after we complete job request.
+                            // when we run out of disk space, report back to server has higher priority.
                             if (!string.IsNullOrEmpty(detailInfo))
                             {
-                                Trace.Error("Unhandle exception happened in worker:");
+                                Trace.Error("Unhandled exception happened in worker:");
                                 Trace.Error(detailInfo);
                             }
 
@@ -574,8 +574,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
         private async Task RenewJobRequestAsync(int poolId, long requestId, Guid lockToken, TaskCompletionSource<int> firstJobRequestRenewed, CancellationToken token)
         {
             var agentServer = HostContext.GetService<IAgentServer>();
-            int firstRenewRetryLimit = 5;
             TaskAgentJobRequest request = null;
+            bool encounteringError = false;
 
             // renew lock during job running.
             // stop renew only if cancellation token for lock renew task been signal or exception still happen after retry.
@@ -589,12 +589,17 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
 
                     if (!firstJobRequestRenewed.Task.IsCompleted)
                     {
-                        // fire first renew successed event.
+                        // fire first renew succeed event.
                         firstJobRequestRenewed.TrySetResult(0);
                     }
 
+                    if (encounteringError)
+                    {
+                        agentServer.SetConnectionTimeout(AgentConnectionType.JobRequest, TimeSpan.FromSeconds(60));
+                    }
+
                     // renew again after 60 sec delay
-                    await Task.Delay(TimeSpan.FromSeconds(60), token);
+                    await HostContext.Delay(TimeSpan.FromSeconds(60), token);
                 }
                 catch (TaskAgentJobNotFoundException)
                 {
@@ -619,40 +624,33 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
                 {
                     Trace.Error($"Catch exception during renew agent jobrequest {requestId}.");
                     Trace.Error(ex);
+                    encounteringError = true;
 
-                    // retry
-                    TimeSpan remainingTime = TimeSpan.Zero;
+                    // retry after random back off 5-15 seconds.
+                    TimeSpan delayTime;
                     if (!firstJobRequestRenewed.Task.IsCompleted)
                     {
-                        // retry 5 times every 10 sec for the first renew
-                        if (firstRenewRetryLimit-- > 0)
-                        {
-                            remainingTime = TimeSpan.FromSeconds(10);
-                        }
+                        Trace.Info($"Retrying lock renewal for jobrequest {requestId}. The first job renew request has failed.");
+                        delayTime = BackoffTimerHelper.GetRandomBackoff(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10));
                     }
                     else
                     {
-                        // retry till reach lockeduntil
-                        remainingTime = request.LockedUntil.Value - DateTime.UtcNow;
+                        Trace.Info($"Retrying lock renewal for jobrequest {requestId}. Job is valid until {request.LockedUntil.Value}.");
+                        delayTime = BackoffTimerHelper.GetRandomBackoff(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15));
                     }
 
-                    if (remainingTime > TimeSpan.Zero)
+                    // Re-establish connection to server in order to landed on different AFD node.
+                    // // Reduce connection timeout to 30 seconds (from 60s)
+                    await agentServer.RefreshConnectionAsync(AgentConnectionType.MessageQueue, TimeSpan.FromSeconds(30));
+
+                    try
                     {
-                        Trace.Info($"Retrying lock renewal for jobrequest {requestId}. Job is still locked for: {remainingTime.TotalSeconds} seconds.");
-                        TimeSpan delayTime = remainingTime.TotalSeconds > 60 ? TimeSpan.FromMinutes(1) : remainingTime;
-                        try
-                        {
-                            await Task.Delay(delayTime, token);
-                        }
-                        catch (OperationCanceledException) when (token.IsCancellationRequested)
-                        {
-                            Trace.Info($"job renew has been canceled, stop renew job request {requestId}.");
-                        }
+                        // back-off before next retry.
+                        await HostContext.Delay(delayTime, token);
                     }
-                    else
+                    catch (OperationCanceledException) when (token.IsCancellationRequested)
                     {
-                        Trace.Info($"Lock renewal has run out of retry, stop renew lock for jobrequest {requestId}.");
-                        return;
+                        Trace.Info($"job renew has been canceled, stop renew job request {requestId}.");
                     }
                 }
             }
@@ -710,7 +708,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Listener
         }
 
         // log an error issue to job level timeline record
-        private async Task LogWorkerProcessUnhandledException(Pipelines.AgentJobRequestMessage message, string errorMessage)
+        private async Task LogUnhandledError(Pipelines.AgentJobRequestMessage message, string errorMessage)
         {
             try
             {

@@ -37,7 +37,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Util
             VssHttpMessageHandler.DefaultWebProxy = proxy;
         }
 
-        public static VssConnection CreateConnection(Uri serverUri, VssCredentials credentials, IEnumerable<DelegatingHandler> additionalDelegatingHandler = null)
+        public static VssConnection CreateConnection(Uri serverUri, VssCredentials credentials, IEnumerable<DelegatingHandler> additionalDelegatingHandler = null, TimeSpan? timeout = null)
         {
             VssClientHttpRequestSettings settings = VssClientHttpRequestSettings.Default.Clone();
 
@@ -56,8 +56,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Util
                 httpRequestTimeoutSeconds = 100;
             }
 
-            // make sure httpRequestTimeoutSeconds in range [100, 1200]
-            settings.SendTimeout = TimeSpan.FromSeconds(Math.Min(Math.Max(httpRequestTimeoutSeconds, 100), 1200));
+            // prefer parameter, otherwise use httpRequestTimeoutSeconds make sure httpRequestTimeoutSeconds in range [100, 1200]
+            settings.SendTimeout = timeout ?? TimeSpan.FromSeconds(Math.Min(Math.Max(httpRequestTimeoutSeconds, 100), 1200));
 
             // Remove Invariant from the list of accepted languages.
             //
