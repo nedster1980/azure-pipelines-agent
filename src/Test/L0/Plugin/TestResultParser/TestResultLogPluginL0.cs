@@ -19,11 +19,54 @@ namespace Test.L0.Plugin.TestResultParser
         [Fact]
         [Trait("Level", "L0")]
         [Trait("Category", "Plugin")]
+        public async Task TestResultLogPlugin_DisableIfNotBuildPipeline()
+        {
+            var agentContext = new Mock<IAgentLogPluginContext>();
+            var plugin = new TestResultLogPlugin();
+
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"system.hosttype", new VariableValue("release") }
+            });
+
+            var result = await plugin.InitializeAsync(agentContext.Object);
+
+            Assert.True(result == false);
+        }
+
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", "Plugin")]
+        public async Task TestResultLogPlugin_DisableIfOnPremPipeline()
+        {
+            var agentContext = new Mock<IAgentLogPluginContext>();
+            var plugin = new TestResultLogPlugin();
+
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("OnPrem") }
+            });
+
+            var result = await plugin.InitializeAsync(agentContext.Object);
+
+            Assert.True(result == false);
+        }
+
+        [Fact]
+        [Trait("Level", "L0")]
+        [Trait("Category", "Plugin")]
         public async Task TestResultLogPlugin_DisableIfPublishTaskPresent()
         {
             var agentContext = new Mock<IAgentLogPluginContext>();
             var plugin = new TestResultLogPlugin();
 
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") }
+            });
+            
             agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
             {
                 new TaskStepDefinitionReference()
@@ -45,6 +88,11 @@ namespace Test.L0.Plugin.TestResultParser
             var agentContext = new Mock<IAgentLogPluginContext>();
             var plugin = new TestResultLogPlugin();
 
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") }
+            });
             agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
             {
                 new TaskStepDefinitionReference()
@@ -61,48 +109,23 @@ namespace Test.L0.Plugin.TestResultParser
         [Fact]
         [Trait("Level", "L0")]
         [Trait("Category", "Plugin")]
-        public async Task TestResultLogPlugin_DisableForReleaseWithBuildContext()
-        {
-            var agentContext = new Mock<IAgentLogPluginContext>();
-            var plugin = new TestResultLogPlugin();
-
-            agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
-            {
-                new TaskStepDefinitionReference()
-                {
-                    Id = new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")
-                }
-            });
-            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
-            {
-                {"build.buildId", new VariableValue("1") },
-                {"release.releaseId", new VariableValue("1") },
-            });
-
-            var result = await plugin.InitializeAsync(agentContext.Object);
-
-            Assert.True(result == false);
-        }
-
-        [Fact]
-        [Trait("Level", "L0")]
-        [Trait("Category", "Plugin")]
         public async Task TestResultLogPlugin_DisableForNonGitHub()
         {
             var agentContext = new Mock<IAgentLogPluginContext>();
             var plugin = new TestResultLogPlugin();
 
+            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") },
+                {"build.repository.provider", new VariableValue("TfsGit") }
+            });
             agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
             {
                 new TaskStepDefinitionReference()
                 {
                     Id = new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")
                 }
-            });
-            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
-            {
-                {"build.buildId", new VariableValue("1") },
-                {"build.repository.provider", new VariableValue("TfsGit") }
             });
 
             var result = await plugin.InitializeAsync(agentContext.Object);
@@ -127,8 +150,10 @@ namespace Test.L0.Plugin.TestResultParser
             });
             agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
             {
-                {"build.buildId", new VariableValue("1") },
-                {"build.repository.provider", new VariableValue("Github") }
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") },
+                {"build.repository.provider", new VariableValue("GitHub") },
+                {"build.buildId", new VariableValue("1") }
             });
             logParser.Setup(x => x.InitializeAsync(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>()))
                 .Throws(new Exception("some exception"));
@@ -157,6 +182,8 @@ namespace Test.L0.Plugin.TestResultParser
             });
             agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
             {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") },
                 {"build.buildId", new VariableValue("1") },
                 {"build.repository.provider", new VariableValue("Github") },
                 {"test.disable.noconfig", new VariableValue("someval") }
@@ -188,6 +215,8 @@ namespace Test.L0.Plugin.TestResultParser
             agentContext.Setup(x => x.VssConnection).Returns(vssConnection.Object);
             agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
             {
+                {"system.hosttype", new VariableValue("build") },
+                {"system.servertype", new VariableValue("Hosted") },
                 {"build.buildId", new VariableValue("1") },
                 {"build.repository.provider", new VariableValue("Github") }
             });

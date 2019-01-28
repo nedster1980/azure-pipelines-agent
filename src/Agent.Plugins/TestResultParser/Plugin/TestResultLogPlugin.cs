@@ -60,6 +60,20 @@ namespace Agent.Plugins.Log
                 return true;
             }
 
+            // Enable only for build
+            if (context.Variables.TryGetValue("system.hosttype", out var hostType)
+                && !string.Equals("Build", hostType.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Disable for on-prem
+            if (context.Variables.TryGetValue("system.servertype", out var serverType)
+                && !string.Equals("Hosted", serverType.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
             // check for PTR task or some other tasks to enable/disable
             return context.Steps == null
                    || context.Steps.Any(x => x.Id.Equals(new Guid("0B0F01ED-7DDE-43FF-9CBB-E48954DAF9B1")))
@@ -69,13 +83,6 @@ namespace Agent.Plugins.Log
 
         private bool IsValidGithubBuild(IAgentLogPluginContext context)
         {
-            // disable in release pipeline
-            if (context.Variables.TryGetValue("release.releaseId", out var releaseIdValue)
-                && int.TryParse(releaseIdValue.Value, out var releaseId) && releaseId > 0)
-            {
-                return false;
-            }
-
             // enable for github only
             if (context.Variables.TryGetValue("build.repository.provider", out var repoProvider)
                 && "github".Equals(repoProvider.Value, StringComparison.OrdinalIgnoreCase))
